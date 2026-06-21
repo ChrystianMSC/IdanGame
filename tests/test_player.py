@@ -56,3 +56,14 @@ def test_draw_card_decrements_deck_and_increments_hand():
     assert success is True
     assert len(player.hand) == initial_hand_count + 1
     assert len(player.deck) == initial_deck_count - 1
+
+
+def test_draw_card_returns_false_when_deck_is_empty():
+    """Garante que comprar carta retorna Falso se o deck acabar."""
+    player = Player("Chrystian")
+    player.deck = []  # Esvazia o deck forçadamente para o cenário de teste
+
+    success = player.draw_card()
+
+    assert success is False
+    assert len(player.hand) == 3  # Mantém apenas as iniciais
