@@ -2,14 +2,14 @@ import sys
 import time
 from src.network.NetworkObserver import NetworkObserver
 from src.game.Player import Player
-from src.game.TerminalView import TerminalView
 
 
 class GameController(NetworkObserver):
 
-    def __init__(self, network_engine, player_name):
+    def __init__(self, network_engine, player_name, view):
         self._network = network_engine
         self._local_player = Player(player_name)
+        self._view = view
         self._is_game_running = False
         self._is_connected = False
 
@@ -24,15 +24,14 @@ class GameController(NetworkObserver):
         if role == "host":
             self._local_player.set_turn(True)
             self._network.start_as_host(host, port)
-            TerminalView.display_message(f"[*] Aguardando conexão em {host}:{port}...")
+            self._view.display_message(f"[*] Aguardando conexão em {host}:{port}...")
         else:
             self._local_player.set_turn(False)
-            TerminalView.display_message(f"[*] Conectando-se a {host}:{port}...")
+            self._view.display_message(f"[*] Conectando-se a {host}:{port}...")
             if not self._network.connect_as_guest(host, port):
-                TerminalView.display_message("[-] Falha crítica ao conectar ao Host.")
+                self._view.display_message("[-] Falha crítica ao conectar ao Host.")
                 sys.exit(1)
 
-            # Guest entra com 0 manas e avisa o Host de sua presença
             self._is_connected = True
             time.sleep(0.5)
             self._sync_state()
@@ -51,7 +50,7 @@ class GameController(NetworkObserver):
         while self._is_game_running and not self._is_connected:
             time.sleep(0.2)
 
-        TerminalView.display_message("[+] Conexão Estabelecida! O jogo começou.\n")
+        self._view.display_message("[+] Conexão Estabelecida! O jogo começou.\n")
         time.sleep(0.5)
 
         while self._is_game_running:
@@ -69,7 +68,7 @@ class GameController(NetworkObserver):
                 self._sync_state()
                 self._turn_loop()
             else:
-                TerminalView.display_board(self._local_player, self._opp_hp, self._opp_mana, self._opp_hand_count,
+                self._view.display_board(self._local_player, self._opp_hp, self._opp_mana, self._opp_hand_count,
                                            self._opp_defense)
                 print("Aguardando o turno do oponente...")
 
@@ -78,10 +77,10 @@ class GameController(NetworkObserver):
 
     def _turn_loop(self):
         while self._local_player.is_my_turn:
-            TerminalView.display_board(self._local_player, self._opp_hp, self._opp_mana, self._opp_hand_count,
+            self._view.display_board(self._local_player, self._opp_hp, self._opp_mana, self._opp_hand_count,
                                        self._opp_defense)
             print("Comandos: [id_da_carta] para jogar | 'pass' para passar o turno | 'exit' para sair")
-            choice = TerminalView.prompt_input("Sua escolha: ").strip().lower()
+            choice = self._view.prompt_input("Sua escolha: ").strip().lower()
 
             if choice == "exit":
                 self.stop()
@@ -165,7 +164,7 @@ class GameController(NetworkObserver):
             self._sync_state()
 
     def _handle_incoming_attack(self, damage, card_name):
-        TerminalView.clear_screen()
+        self._view.clear_screen()
         print(f"⚠️ Oponente usou a carta [{card_name}] causando {damage} de Dano!")
 
         playable_defenses = [
@@ -180,7 +179,7 @@ class GameController(NetworkObserver):
                 print(f"  [{idx}] {c['name']} (Defesa: {c['value']}, Custo: {c['cost']}){special_info}")
             print("  [pass] Não defender (sofrer dano ou mitigar com defesa passiva)")
 
-            choice = TerminalView.prompt_input(f"Escolha sua reação contra [{card_name}]: ").strip().lower()
+            choice = self._view.prompt_input(f"Escolha sua reação contra [{card_name}]: ").strip().lower()
             if choice.isdigit():
                 chosen_idx = int(choice)
                 if any(idx == chosen_idx for idx, _ in playable_defenses):
@@ -224,12 +223,12 @@ class GameController(NetworkObserver):
         time.sleep(2.5)
 
     def on_connection_lost(self):
-        TerminalView.display_message("\n[-] Conexão com o adversário foi perdida.")
+        self._view.display_message("\n[-] Conexão com o adversário foi perdida.")
         self.stop()
 
     def stop(self):
         self._is_game_running = False
         self._network.disconnect()
-        TerminalView.display_message("[*] Aplicação encerrada com sucesso.")
+        self._view.display_message("[*] Aplicação encerrada com sucesso.")
         time.sleep(0.5)
         sys.exit(0)
