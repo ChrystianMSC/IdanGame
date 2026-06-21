@@ -39,3 +39,22 @@ def test_setup_connection_as_guest(game_controller, mock_network):
         assert game_controller._local_player.is_my_turn is False
         assert game_controller._is_connected is True
         mock_network.connect_as_guest.assert_called_once_with("127.0.0.1", 9999)
+
+
+def test_on_message_received_sync_state(game_controller):
+    """[Integração] Garante que pacotes de SYNC_STATE atualizam as propriedades espelhadas do oponente."""
+    payload = {
+        "action": "SYNC_STATE",
+        "hp": 7,
+        "mana": "4/4",
+        "hand_count": 2,
+        "defense": 3
+    }
+
+    game_controller.on_message_received(payload)
+
+    assert game_controller._opp_hp == 7
+    assert game_controller._opp_mana == "4/4"
+    assert game_controller._opp_hand_count == 2
+    assert game_controller._opp_defense == 3
+    assert game_controller._is_connected is True
