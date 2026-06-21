@@ -30,3 +30,33 @@ def test_prompt_input_returns_user_string():
     with patch("builtins.input", return_value="pass"):
         result = TerminalView.prompt_input("Digite algo: ")
         assert result == "pass"
+
+
+def test_display_board_renders_all_components(capsys):
+    """Garante que a renderização do tabuleiro imprime os dados cruciais (Vida, Mana, Mão)."""
+    # Criamos um mock do jogador para não depender do sorteio real de cartas
+    mock_player = MagicMock(spec=Player)
+    mock_player.name = "Chrystian"
+    mock_player.hp = 10
+    mock_player.mana_pool = 3
+    mock_player.mana_max = 3
+    mock_player.mana_deck = 7
+    mock_player.defense_active = 2
+    mock_player.is_my_turn = True
+    mock_player.deck = [1, 2, 3, 4, 5]  # Simula tamanho do deck
+    mock_player.hand = [
+        {"name": "Bola de Fogo", "type": "DANO", "cost": 2, "value": 4, "return_mana": False}
+    ]
+
+    # Forçamos o os.system a não fazer nada para não limpar o terminal de teste real
+    with patch("os.system"):
+        TerminalView.display_board(mock_player, 8, "1/1", 3, 0)
+
+    captured = capsys.readouterr()
+
+    # Validamos se as palavras-chave do estado do jogo aparecem na tela gerada
+    assert "ADVERSÁRIO" in captured.out
+    assert "SUA VEZ: True" in captured.out
+    assert "Vida: 10/10" in captured.out
+    assert "Mana: 3/3" in captured.out
+    assert "Bola de Fogo" in captured.out
