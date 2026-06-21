@@ -26,7 +26,6 @@ def game_controller(mock_network, mock_view):
 
 def test_setup_connection_as_host(game_controller, mock_network):
     """Garante que o Host inicia o servidor de rede e começa com a prioridade do turno."""
-    # Não precisa de patches! O mock_view injetado cuida de tudo de forma transparente.
     game_controller.setup_connection("host", "127.0.0.1", 9999)
 
     assert game_controller._local_player.is_my_turn is True
@@ -148,11 +147,11 @@ def test_turn_loop_card_penalty_return_mana(game_controller):
     penalized_card = {"name": "Pacto Sobrenatural", "type": "CURA", "value": 2, "cost": 2, "return_mana": True}
     game_controller._local_player.hand = [penalized_card]
 
-    with patch("src.game.GameController.TerminalView.prompt_input", side_effect=["0", "pass"]), \
-            patch("src.game.GameController.TerminalView.display_board"), \
-            patch("time.sleep"):
+    game_controller._view.prompt_input.side_effect = ["0", "pass"]
+
+    with patch("time.sleep"):
         game_controller._turn_loop()
 
-    # Custou 2 manas, e perdeu 1 de mana máxima devido à penalidade de retorno
+    assert game_controller._local_player.mana_pool == 2
     assert game_controller._local_player.mana_max == 3
     assert game_controller._local_player.mana_deck == 6
