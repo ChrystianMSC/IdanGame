@@ -81,3 +81,20 @@ def test_on_message_received_attack_resolved(game_controller):
 
     assert game_controller._opp_hp == 6
     assert game_controller._is_waiting_defense is False
+
+def test_handle_incoming_attack_no_defenses(game_controller, mock_network):
+    """[Integração] Testa a resolução de um ataque recebido quando o jogador local não tem manas/cartas para defender."""
+    game_controller._local_player.hp = 10
+    game_controller._local_player.mana_pool = 0
+    game_controller._local_player.defense_active = 2
+
+    with patch("src.game.GameController.TerminalView.clear_screen"), patch("time.sleep"):
+        game_controller._handle_incoming_attack(5, "Bola de Fogo")
+
+        assert game_controller._local_player.hp == 7
+        assert game_controller._local_player.defense_active == 0
+
+        mock_network.send.assert_any_call({
+            "action": "ATTACK_RESOLVED",
+            "final_damage": 3
+        })
