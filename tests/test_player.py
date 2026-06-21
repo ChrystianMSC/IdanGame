@@ -80,3 +80,15 @@ def test_draw_mana_consecutive_turns_recharges_fully():
     assert player.mana_max == 2
     assert player.mana_pool == 2  # Deve recarregar totalmente para o novo máximo
     assert player.mana_deck == 8
+
+
+def test_draw_mana_returns_false_when_mana_deck_is_empty():
+    """Garante que não concede mais mana se o deck de mana chegar a zero."""
+    player = Player("Chrystian")
+    player.mana_deck = 0
+
+    success = player.draw_mana()
+
+    assert success is False
+    assert player.mana_max == 0
+    assert player.mana_pool == 0
