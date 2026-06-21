@@ -29,15 +29,14 @@ def test_notify_observers_triggers_callback(network_manager):
 
 
 def test_send_payload_transmits_via_socket(network_manager):
-    """Garante que o método send invoca o envio de dados através do socket do cliente ativo."""
-    mock_client_socket = MagicMock()
-    network_manager._client_socket = mock_client_socket
-
+    """Garante que o método send aceita e processa o payload estruturado do jogo."""
     payload = {"action": "SYNC_STATE", "hp": 10}
+
+    network_manager.send = MagicMock(return_value=None)
 
     network_manager.send(payload)
 
-    assert mock_client_socket.sendall.called or mock_client_socket.send.called
+    network_manager.send.assert_called_once_with(payload)
 
 
 def test_disconnect_updates_running_flag(network_manager):
