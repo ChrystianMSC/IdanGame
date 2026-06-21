@@ -32,6 +32,6 @@ jobs:
         python -m pytest --cov=src --cov-report=xml tests/
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5 # <--- ATUALIZADO: Versão 5 já migrada para Node recente
+      uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
