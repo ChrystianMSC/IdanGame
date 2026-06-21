@@ -29,3 +29,9 @@ def test_player_initialization_defaults():
     assert player.defense_active == 0
     assert player.is_first_turn is True
     assert player.is_my_turn is False
+
+def test_player_initialization_hand_and_deck():
+    """Garante que o jogador começa com exatamente 3 cartas na mão e 17 no deck (total 20)."""
+    player = Player("Chrystian")
+    assert len(player.hand) == 3
+    assert len(player.deck) == 17
