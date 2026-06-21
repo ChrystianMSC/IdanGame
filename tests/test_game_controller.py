@@ -26,3 +26,16 @@ def test_setup_connection_as_host(game_controller, mock_network):
         assert game_controller._local_player.is_my_turn is True
         assert game_controller._is_game_running is True
         mock_network.start_as_host.assert_called_once_with("127.0.0.1", 9999)
+
+
+def test_setup_connection_as_guest(game_controller, mock_network):
+    """Garante que o Guest se conecta ao host e inicia aguardando o turno."""
+    mock_network.connect_as_guest.return_value = True
+
+    with patch("src.game.GameController.TerminalView.display_message"), \
+            patch("src.game.GameController.TerminalView.display_board"):
+        game_controller.setup_connection("guest", "127.0.0.1", 9999)
+
+        assert game_controller._local_player.is_my_turn is False
+        assert game_controller._is_connected is True
+        mock_network.connect_as_guest.assert_called_once_with("127.0.0.1", 9999)
