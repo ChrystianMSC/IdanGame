@@ -57,3 +57,12 @@ def test_on_message_received_sync_state(game_controller):
     assert game_controller._opp_hand_count == 2
     assert game_controller._opp_defense == 3
     assert game_controller._is_connected is True
+
+
+def test_on_message_received_end_turn(game_controller):
+    """[Integração] Garante que a mensagem END_TURN passa a prioridade de volta para o jogador local."""
+    game_controller._local_player.set_turn(False)
+
+    game_controller.on_message_received({"action": "END_TURN"})
+
+    assert game_controller._local_player.is_my_turn is True
