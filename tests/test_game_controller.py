@@ -104,3 +104,55 @@ def test_handle_incoming_attack_no_defenses(game_controller, mock_network):
             "action": "ATTACK_RESOLVED",
             "final_damage": 3
         })
+
+
+def test_execute_card_action_dano(game_controller, mock_network):
+    """Garante que jogar uma carta de DANO dispara um ATTACK_REQUEST na rede."""
+    card = {"name": "Explosão", "type": "DANO", "value": 5, "cost": 2}
+    game_controller._execute_card_action(card)
+
+    assert game_controller._is_waiting_defense is True
+    mock_network.send.assert_called_once_with({
+        "action": "ATTACK_REQUEST",
+        "value": 5,
+        "card_name": "Explosão"
+    })
+
+def test_execute_card_action_cura(game_controller):
+    """Garante que jogar uma carta de CURA recupera vida respeitando o teto de 10 HP."""
+    game_controller._local_player.hp = 7
+    card = {"name": "Luz", "type": "CURA", "value": 5, "cost": 1}
+
+    with patch("time.sleep"):
+        game_controller._execute_card_action(card)
+
+    assert game_controller._local_player.hp == 10  # 7 + 5 = 12, mas teto é 10
+
+def test_execute_card_action_defesa(game_controller):
+    """Garante que jogar uma carta de DEFESA incrementa os pontos de armadura passiva."""
+    game_controller._local_player.defense_active = 1
+    card = {"name": "Escudo", "type": "DEFESA", "value": 3, "cost": 1}
+
+    with patch("time.sleep"):
+        game_controller._execute_card_action(card)
+
+    assert game_controller._local_player.defense_active == 4
+
+def test_turn_loop_card_penalty_return_mana(game_controller):
+    """Garante que uma carta com a propriedade 'return_mana' ativa penaliza o deck de mana do jogador."""
+    game_controller._local_player.set_turn(True)
+    game_controller._local_player.mana_max = 4
+    game_controller._local_player.mana_pool = 4
+    game_controller._local_player.mana_deck = 5
+
+    penalized_card = {"name": "Pacto Sobrenatural", "type": "CURA", "value": 2, "cost": 2, "return_mana": True}
+    game_controller._local_player.hand = [penalized_card]
+
+    with patch("src.game.GameController.TerminalView.prompt_input", side_effect=["0", "pass"]), \
+            patch("src.game.GameController.TerminalView.display_board"), \
+            patch("time.sleep"):
+        game_controller._turn_loop()
+
+    # Custou 2 manas, e perdeu 1 de mana máxima devido à penalidade de retorno
+    assert game_controller._local_player.mana_max == 3
+    assert game_controller._local_player.mana_deck == 6
