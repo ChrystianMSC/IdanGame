@@ -18,3 +18,9 @@ def test_display_message_prints_to_stdout(capsys):
     TerminalView.display_message("Mensagem de Teste")
     captured = capsys.readouterr()
     assert captured.out == "Mensagem de Teste\n"
+
+def test_display_opponent_message_formats_correctly(capsys):
+    """Garante que a mensagem do oponente é exibida no formato estruturado esperado."""
+    TerminalView.display_opponent_message("Adversario", "Minha jogada")
+    captured = capsys.readouterr()
+    assert captured.out == "\n[Adversario]: Minha jogada\n"
