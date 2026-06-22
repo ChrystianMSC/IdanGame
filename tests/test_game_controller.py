@@ -279,3 +279,49 @@ def test_stop_method_cleanup(game_controller, mock_network):
     assert game_controller._is_game_running is False
     mock_network.disconnect.assert_called_once()
     assert exc_info.value.code == 0
+
+
+def test_start_chat_loop_and_turn_sequence(game_controller):
+    """Garante o fluxo completo do loop principal passando de esperando conexão para o turno."""
+    game_controller._is_game_running = True
+    game_controller._is_connected = False
+    game_controller._local_player.set_turn(True)
+    game_controller._local_player.is_first_turn = True
+    game_controller._opp_mana = "1/1"
+
+    game_controller._local_player.hand = []
+
+    def mock_turn_loop_side_effect():
+        game_controller._is_game_running = False
+
+    with patch("time.sleep"), \
+            patch.object(game_controller, "_turn_loop", side_effect=mock_turn_loop_side_effect) as mock_turn, \
+            patch.object(game_controller, "_sync_state") as mock_sync:
+        game_controller._is_connected = True
+
+        game_controller.start_chat_loop()
+
+        mock_turn.assert_called_once()
+        mock_sync.assert_called_once()
+
+
+def test_start_chat_loop_opponent_turn(game_controller):
+    """Garante que o loop se comporta corretamente e renderiza o board esperando o oponente."""
+    game_controller._is_game_running = True
+    game_controller._is_connected = True
+    game_controller._local_player.set_turn(False)  # Turno do oponente
+
+    call_count = 0
+
+    def mock_display_board(*args):
+        nonlocal call_count
+        call_count += 1
+        if call_count >= 1:
+            game_controller._is_game_running = False
+
+    game_controller._view.display_board.side_effect = mock_display_board
+
+    with patch("time.sleep"):
+        game_controller.start_chat_loop()
+
+        game_controller._view.display_board.assert_called()
